@@ -40,7 +40,6 @@
 #include "rosserial_msgs/Log.h"
 #include "rosserial_msgs/RequestParam.h"
 
-
 #define SYNC_SECONDS        5
 
 #define MODE_FIRST_FF       0
@@ -66,7 +65,7 @@
 
 
 
-#define MSG_TIMEOUT 200  // was 20 milliseconds to recieve all of message data
+#define MSG_TIMEOUT 20  //20 milliseconds to recieve all of message data
 
 #include "msg.h"
 
@@ -84,7 +83,6 @@ namespace ros {
 #include "subscriber.h"
 #include "service_server.h"
 #include "service_client.h"
-
 
 namespace ros {
 
@@ -188,7 +186,6 @@ namespace ros {
         if( (c_time - last_sync_receive_time) > (SYNC_SECONDS*2200) ){
             configured_ = false;
          }
-
          
         /* reset if message has timed out */
         if ( mode_ != MODE_FIRST_FF){ 
@@ -241,7 +238,7 @@ namespace ros {
           }else if( mode_ == MODE_SIZE_CHECKSUM ){  
             if( (checksum_%256) == 255)
 	      mode_++;
-	    else {
+	    else 
 	      mode_ = MODE_FIRST_FF;          /* Abandon the frame if the msg len is wrong */
               INCREMENT_DIAGNOSTIC(msg_len_checksum_fails);
             }
@@ -293,7 +290,6 @@ namespace ros {
         return configured_;
       };
 
-
       /********************************************************************
        * Time functions
        */
@@ -337,7 +333,6 @@ namespace ros {
         nsec_offset = new_now.nsec - (ms%1000)*1000000UL + 1000000000UL;
         normalizeSecNSec(sec_offset, nsec_offset);
       }
-
 
       /********************************************************************
        * Topic Management 
@@ -429,12 +424,10 @@ namespace ros {
         configured_ = true;
       }
 
-
       virtual int publish(int id, const Msg * msg)
       {
         if(id >= 100 && !configured_) 
 	  return 0;
-
 
         /* serialize message */
         int l = msg->serialize(message_out+7);
@@ -461,12 +454,12 @@ namespace ros {
           logerror("Message from device dropped: message larger than buffer.");
           return 0;
         }
-
       }
 
       /********************************************************************
        * Logging
        */
+
     private:
       void log(char byte, const char * msg){
         rosserial_msgs::Log l;
@@ -495,14 +488,13 @@ namespace ros {
       /********************************************************************
        * Parameters
        */
+
     private:
       bool param_recieved;
-
       rosserial_msgs::RequestParamResponse req_param_resp;
 
-
       bool requestParam(const char * name, int time_out =  1000){
-         param_recieved = false;
+        param_recieved = false;
         rosserial_msgs::RequestParamRequest req;
         req.name  = (char*)name;
         publish(rosserial_msgs::TopicInfo::ID_PARAMETER_REQUEST, &req);
@@ -551,7 +543,5 @@ namespace ros {
   };
 
 }
-
-
 
 #endif
