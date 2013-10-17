@@ -40,6 +40,8 @@
 #include "rosserial_msgs/Log.h"
 #include "rosserial_msgs/RequestParam.h"
 
+#define NH_DIAGNOSTICS
+
 #define SYNC_SECONDS        5
 
 #define MODE_FIRST_FF       0
@@ -65,7 +67,7 @@
 
 
 
-#define MSG_TIMEOUT 20  //20 milliseconds to recieve all of message data
+#define MSG_TIMEOUT 200  // was 20 milliseconds to recieve all of message data
 
 #include "msg.h"
 
@@ -238,7 +240,7 @@ namespace ros {
           }else if( mode_ == MODE_SIZE_CHECKSUM ){  
             if( (checksum_%256) == 255)
 	      mode_++;
-	    else 
+	    else {
 	      mode_ = MODE_FIRST_FF;          /* Abandon the frame if the msg len is wrong */
               INCREMENT_DIAGNOSTIC(msg_len_checksum_fails);
             }
@@ -459,7 +461,6 @@ namespace ros {
       /********************************************************************
        * Logging
        */
-
     private:
       void log(char byte, const char * msg){
         rosserial_msgs::Log l;

@@ -18,26 +18,12 @@
 
 #include "HardwareSerial.h"
 
-extern "C" {
-void     UART_SpiUartWriteTxData(uint32_t value) ;
-uint32_t UART_UartGetByte(void) ;
-
-void    UART_Start() ; 
-}
-
 class Uart : public HardwareSerial
 {
   public:
-    void begin(unsigned long baud) { UART_Start(); } ; // TBD: set baud rate
-    int read(void) { 
-      uint32_t data =UART_UartGetByte();
-      if (data&0xffffff00) {
-        return -1;
-      } else {
-        return data;
-      }
-    } ;
-    size_t write(uint8_t data) { UART_SpiUartWriteTxData((uint32_t)data); return 1; } ;
+    void begin(unsigned long baud); // TBD: set baud rate
+    int read(void);
+    size_t write(uint8_t data);
 } ;
 
 extern Uart Uart0;
