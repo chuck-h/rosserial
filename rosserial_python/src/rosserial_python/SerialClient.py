@@ -406,6 +406,8 @@ class SerialClient:
 
             # checksum of msg_len
             msg_len_chk = self.port.read(1)
+            if len(msg_len_chk) != 1:
+                continue
             msg_len_checksum = sum(map(ord, msg_len_bytes)) + ord(msg_len_chk)
 
             if msg_len_checksum%256 != 255:
@@ -423,17 +425,20 @@ class SerialClient:
             if (len(msg) != msg_length):
                 self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Packet Failed :  Failed to read msg data")
                 rospy.loginfo("Packet Failed :  Failed to read msg data")
-                rospy.loginfo("msg len is %d",len(msg))
+                rospy.loginfo("msg len is %d, topic is %d"%(len(msg),topic_id))
                 #self.port.flushInput()
                 continue
 
             # checksum for topic id and msg
             chk = self.port.read(1)
+            if len(chk) != 1:
+                continue
             checksum = sum(map(ord, topic_id_header) ) + sum(map(ord, msg)) + ord(chk)
 
             if checksum%256 == 255:
                 self.synced = True
                 try:
+                    #print "got msg on topic id %d"%topic_id
                     self.callbacks[topic_id](msg)
                 except KeyError:
                     rospy.logerr("Tried to publish before configured, topic id %d" % topic_id)
@@ -623,6 +628,7 @@ class SerialClient:
                 msg_checksum = 255 - ( ((topic&255) + (topic>>8) + sum([ord(x) for x in msg]))%256 )
                 data = "\xff" + self.protocol_ver  + chr(length&255) + chr(length>>8) + chr(msg_len_checksum) + chr(topic&255) + chr(topic>>8)
                 data = data + msg + chr(msg_checksum)
+                #print "sending msg on topic %d"%topic
                 self.port.write(data)
                 return length
 
