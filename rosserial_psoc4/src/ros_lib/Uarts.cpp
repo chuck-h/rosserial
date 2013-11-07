@@ -22,25 +22,25 @@ extern "C" {
 }
 
 void Uart::begin(unsigned long baud) {
-  UART_Start();
+  ROSSerial_UART_Start();
 }; // TBD: set baud rate
 
 int Uart::read(void) {
   int32_t data = -1;
-  if (UART_SpiUartGetRxBufferSize() != 0) {
+  if (ROSSerial_UART_SpiUartGetRxBufferSize() != 0) {
     // data is ready
-    data = (int32_t)UART_SpiUartReadRxData();
+    data = (int32_t)ROSSerial_UART_SpiUartReadRxData();
   }
   // clear error flags
-  if (UART_CHECK_INTR_RX(UART_INTR_RX_ERR)) {
+  if (ROSSerial_UART_CHECK_INTR_RX(ROSSerial_UART_INTR_RX_ERR)) {
     // TODO: test for meaningful error (i.e. not Buffer empty) & return -1
-    UART_ClearRxInterruptSource(UART_INTR_RX_ERR);
+    ROSSerial_UART_ClearRxInterruptSource(ROSSerial_UART_INTR_RX_ERR);
   }
   return data;
 };
 
 size_t Uart::write(uint8_t data) {
-  UART_SpiUartWriteTxData((uint32_t)data);
+  ROSSerial_UART_SpiUartWriteTxData((uint32_t)data);
   return 1;
 };
 
