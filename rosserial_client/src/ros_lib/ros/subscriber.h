@@ -61,9 +61,17 @@ namespace ros {
     public:
       typedef void(*CallbackT)(const MsgT&);
       MsgT msg;
-
+      // Rosserial standard callback
       Subscriber(const char * topic_name, CallbackT cb, int endpoint=rosserial_msgs::TopicInfo::ID_SUBSCRIBER) :
-        cb_(cb),
+        cb_(cb), cbp_(NULL),
+        endpoint_(endpoint)
+      {
+        topic_ = topic_name;
+      };
+      // callback with message pointer allows use of member-function callbacks
+      typedef void(*CallbackTPtr)(const MsgT*);
+      Subscriber(const char * topic_name, CallbackTPtr cbp, int endpoint=rosserial_msgs::TopicInfo::ID_SUBSCRIBER) :
+        cb_(NULL), cbp_(cbp),
         endpoint_(endpoint)
       {
         topic_ = topic_name;
@@ -71,7 +79,11 @@ namespace ros {
 
       virtual void callback(unsigned char* data){
         msg.deserialize(data);
-        this->cb_(msg);
+        if (cb_) {
+          this->cb_(msg);
+        } else if (cbp_) {
+          this->cbp_(&msg);
+        }
       }
 
       virtual const char * getMsgType(){ return this->msg.getType(); }
@@ -80,6 +92,7 @@ namespace ros {
 
     private:
       CallbackT cb_;
+      CallbackTPtr cbp_;
       int endpoint_;
   };
 
