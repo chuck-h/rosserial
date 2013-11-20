@@ -362,8 +362,10 @@ class Message:
         f.write('    virtual int serialize(unsigned char *outbuffer) const\n')
         f.write('    {\n')
         f.write('      int offset = 0;\n')
+        f.write('#ifndef ROS_MSG_DONT_SERIALIZE\n')
         for d in self.data:
             d.serialize(f)
+        f.write('#endif\n')
         f.write('      return offset;\n');
         f.write('    }\n')
         f.write('\n')
@@ -373,8 +375,10 @@ class Message:
         f.write('    virtual int deserialize(unsigned char *inbuffer)\n')
         f.write('    {\n')
         f.write('      int offset = 0;\n')
+        f.write('#ifndef ROS_MSG_DONT_DESERIALIZE\n')
         for d in self.data:
             d.deserialize(f)
+        f.write('#endif\n')
         f.write('     return offset;\n');
         f.write('    }\n')
         f.write('\n')
