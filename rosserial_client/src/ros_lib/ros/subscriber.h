@@ -76,6 +76,12 @@ namespace ros {
       {
         topic_ = topic_name;
       };
+      // uninitialized callback pointer
+      Subscriber(int endpoint=rosserial_msgs::TopicInfo::ID_SUBSCRIBER) :
+        cb_(NULL), cbp_(NULL),
+        endpoint_(endpoint)
+      {
+      };
 
       virtual void callback(unsigned char* data){
         msg.deserialize(data);
@@ -90,7 +96,6 @@ namespace ros {
       virtual const char * getMsgMD5(){ return this->msg.getMD5(); }
       virtual int getEndpointType(){ return endpoint_; }
 
-    private:
       CallbackT cb_;
       CallbackTPtr cbp_;
       int endpoint_;
