@@ -463,7 +463,7 @@ class SerialClient:
             self.publishers[msg.topic_id] = pub
             self.callbacks[msg.topic_id] = pub.handlePacket
             self.setPublishSize(msg.buffer_size)
-            rospy.loginfo("Setup publisher on %s [%s]" % (msg.topic_name, msg.message_type) )
+            rospy.loginfo("Setup publisher on %s [%s] as id %d" % (msg.topic_name, msg.message_type, msg.topic_id) )
         except Exception as e:
             rospy.logerr("Creation of publisher failed: %s", e)
 
@@ -475,7 +475,7 @@ class SerialClient:
             sub = Subscriber(msg, self)
             self.subscribers[msg.topic_name] = sub
             self.setSubscribeSize(msg.buffer_size)
-            rospy.loginfo("Setup subscriber on %s [%s]" % (msg.topic_name, msg.message_type) )
+            rospy.loginfo("Setup subscriber on %s [%s] as id %d" % (msg.topic_name, msg.message_type, msg.topic_id) )
         except Exception as e:
             rospy.logerr("Creation of subscriber failed: %s", e)
 
