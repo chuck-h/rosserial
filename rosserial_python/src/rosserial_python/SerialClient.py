@@ -369,6 +369,15 @@ class SerialClient:
         # request topic sync
         self.port.write("\xff" + self.protocol_ver + "\x00\x00\xff\x00\x00\xff")
 
+    def protected_read(self, n):
+        while True:
+          try:
+            return self.port.read(n)
+          except SerialException as e:
+            rospy.logerr("Serial Exception on %s: %s"%(self.port.name, e))
+            self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Serial Exception %s"%e)
+
+
     def run(self):
         """ Forward recieved messages to appropriate publisher. """
         data = ''
@@ -384,10 +393,10 @@ class SerialClient:
                 self.lastsync = rospy.Time.now()
 
             flag = [0,0]
-            flag[0]  = self.port.read(1)
+            flag[0]  = self.protected_read(1)
             if (flag[0] != '\xff'):                
                 continue
-            flag[1] = self.port.read(1)
+            flag[1] = self.protected_read(1)
             if ( flag[1] != self.protocol_ver):
                 self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
                 rospy.logerr("Mismatched protocol version in packet: lost sync or rosserial_python is from different ros release than the rosserial client")
@@ -398,14 +407,14 @@ class SerialClient:
                     found_ver_msg = "Protocol version of client is unrecognized"
                 rospy.loginfo("%s, expected %s" % (found_ver_msg, protocol_ver_msgs[self.protocol_ver]))
                 continue
-            msg_len_bytes = self.port.read(2)
+            msg_len_bytes = self.protected_read(2)
             if len(msg_len_bytes) != 2:
                 continue
 
             msg_length, = struct.unpack("<h", msg_len_bytes)
 
             # checksum of msg_len
-            msg_len_chk = self.port.read(1)
+            msg_len_chk = self.protected_read(1)
             if len(msg_len_chk) != 1:
                 continue
             msg_len_checksum = sum(map(ord, msg_len_bytes)) + ord(msg_len_chk)
@@ -416,12 +425,12 @@ class SerialClient:
                 continue
 
             # topic id (2 bytes)
-            topic_id_header = self.port.read(2)
+            topic_id_header = self.protected_read(2)
             if len(topic_id_header)!=2:
                 continue
             topic_id, = struct.unpack("<h", topic_id_header)
 
-            msg = self.port.read(msg_length)
+            msg = self.protected_read(msg_length)
             if (len(msg) != msg_length):
                 self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Packet Failed :  Failed to read msg data")
                 rospy.loginfo("Packet Failed :  Failed to read msg data")
@@ -430,7 +439,7 @@ class SerialClient:
                 continue
 
             # checksum for topic id and msg
-            chk = self.port.read(1)
+            chk = self.protected_read(1)
             if len(chk) != 1:
                 continue
             checksum = sum(map(ord, topic_id_header) ) + sum(map(ord, msg)) + ord(chk)
