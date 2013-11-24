@@ -370,13 +370,13 @@ class SerialClient:
         self.port.write("\xff" + self.protocol_ver + "\x00\x00\xff\x00\x00\xff")
 
     def protected_read(self, n):
-        while True:
+        for i in range(2):
           try:
             return self.port.read(n)
           except SerialException as e:
             rospy.logerr("Serial Exception on %s: %s"%(self.port.name, e))
             self.sendDiagnostics(diagnostic_msgs.msg.DiagnosticStatus.ERROR, "Serial Exception %s"%e)
-
+        return self.port.read(n) # if third try fails, throw exception (crash)
 
     def run(self):
         """ Forward recieved messages to appropriate publisher. """
