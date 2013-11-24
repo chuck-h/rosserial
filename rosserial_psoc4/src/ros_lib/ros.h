@@ -48,7 +48,8 @@
 namespace ros
 {
 
-  typedef NodeHandle_<Psoc4Hardware, 6, 6, 200, 200> NodeHandle;
+  // template is <hardware type, max subs, max pubs, input buf chars, output buf chars>
+  typedef NodeHandle_<Psoc4Hardware, 10, 20, 200, 200> NodeHandle;
  
 }
 
