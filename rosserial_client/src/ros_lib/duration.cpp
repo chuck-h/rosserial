@@ -70,12 +70,13 @@ namespace ros
     normalizeSecNSecSigned(sec, nsec);
     return *this;
   }
-
+  #ifndef ROS_NO_FLOATS
   Duration& Duration::operator*=(double scale){
     sec *= scale;
     nsec *= scale;
     normalizeSecNSecSigned(sec, nsec);
     return *this;
   }
+  #endif
 
 }

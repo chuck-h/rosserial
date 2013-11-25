@@ -35,13 +35,9 @@
 #ifndef _ROS_H_
 #define _ROS_H_
 
-#include "ros/node_handle.h"
-//
 #include <stdint.h>
-//#include <string.h>
-//#include <stdlib.h>
-//
 
+#include "ros/node_handle.h"
 
 #include "Psoc4Hardware.h"
 
