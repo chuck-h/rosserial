@@ -42,7 +42,7 @@
 
 #define NH_DIAGNOSTICS
 
-#define SYNC_SECONDS        5
+#define SYNC_SECONDS        2
 
 #define MODE_FIRST_FF       0
 /*
@@ -186,7 +186,7 @@ namespace ros {
 
         /* restart if timed out */
         unsigned long c_time = hardware_.time();
-        if( (c_time - last_sync_receive_time) > (SYNC_SECONDS*2200) ){
+        if( (c_time - last_sync_receive_time) > (SYNC_SECONDS*1100) ){
             configured_ = false;
          }
 

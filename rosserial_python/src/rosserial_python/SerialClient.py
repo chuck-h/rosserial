@@ -382,7 +382,7 @@ class SerialClient:
         """ Forward recieved messages to appropriate publisher. """
         data = ''
         while not rospy.is_shutdown():
-            if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout * 3):
+            if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout):
                 if (self.synced == True):
                     rospy.logerr("Lost sync with device, restarting...")
                 else:
