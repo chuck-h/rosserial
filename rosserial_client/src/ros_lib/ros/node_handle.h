@@ -124,13 +124,7 @@ namespace ros {
         chars_flushed,
         NUM_DIAGNOSTICS
       } NhDiagnosticType;
-      #ifdef NH_DIAGNOSTICS
         uint16_t nh_diagnostics[NUM_DIAGNOSTICS];
-        #define INCREMENT_DIAGNOSTIC(n) ++nh_diagnostics[(n)]
-      #else
-        #define INCREMENT_DIAGNOSTIC(n) { }
-      #endif
-
 
       /*
        * Setup Functions
