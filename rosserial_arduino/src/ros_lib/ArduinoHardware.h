@@ -40,7 +40,6 @@
 #else
   #include <WProgram.h>  // Arduino 0022
 #endif
-
 #ifdef _SAM3XA_
   #include <UARTClass.h>  // Arduino Due
   #define SERIAL_CLASS UARTClass

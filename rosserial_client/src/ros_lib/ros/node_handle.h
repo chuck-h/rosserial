@@ -40,8 +40,6 @@
 #include "rosserial_msgs/Log.h"
 #include "rosserial_msgs/RequestParam.h"
 
-#define NH_DIAGNOSTICS
-
 #define SYNC_SECONDS        2
 
 #define MODE_FIRST_FF       0
@@ -86,7 +84,6 @@ namespace ros {
 #include "service_server.h"
 #include "service_client.h"
 
-
 namespace ros {
 
   /* Node Handle */
@@ -111,27 +108,6 @@ namespace ros {
 
       Publisher * publishers[MAX_PUBLISHERS];
       Subscriber_ * subscribers[MAX_SUBSCRIBERS];
-
-    public:
-      /* diagnostic array */
-      typedef enum {
-        msg_starts,
-        msg_timeouts,
-        missed_flags,
-        reconfigures,
-        msg_len_checksum_fails,
-        msg_body_checksum_fails,
-        chars_read,
-        chars_flushed,
-        NUM_DIAGNOSTICS
-      } NhDiagnosticType;
-      #ifdef NH_DIAGNOSTICS
-        uint16_t nh_diagnostics[NUM_DIAGNOSTICS];
-        #define INCREMENT_DIAGNOSTIC(n) ++nh_diagnostics[(n)]
-      #else
-        #define INCREMENT_DIAGNOSTIC(n) { }
-      #endif
-
 
       /*
        * Setup Functions
@@ -189,13 +165,11 @@ namespace ros {
         if( (c_time - last_sync_receive_time) > (SYNC_SECONDS*1100) ){
             configured_ = false;
          }
-
          
         /* reset if message has timed out */
         if ( mode_ != MODE_FIRST_FF){ 
           if (c_time > last_msg_timeout_time){
             mode_ = MODE_FIRST_FF;
-            INCREMENT_DIAGNOSTIC(msg_timeouts);
           }
         }
 
@@ -205,7 +179,6 @@ namespace ros {
           int data = hardware_.read();
           if( data < 0 )
             break;
-          INCREMENT_DIAGNOSTIC(chars_read);
           checksum_ += data;
           if( mode_ == MODE_MESSAGE ){        /* message data being recieved */
             message_in[index_++] = data;
@@ -216,19 +189,14 @@ namespace ros {
             if(data == 0xff){
               mode_++;
               last_msg_timeout_time = c_time + MSG_TIMEOUT;
-              INCREMENT_DIAGNOSTIC(msg_starts);
-            } else {
-              INCREMENT_DIAGNOSTIC(chars_flushed);
             }
           }else if( mode_ == MODE_PROTOCOL_VER ){
             if(data == PROTOCOL_VER){
               mode_++;
             }else{
               mode_ = MODE_FIRST_FF;
-              INCREMENT_DIAGNOSTIC(missed_flags);
               if (configured_ == false) {
                   requestSyncTime(); 	/* send a msg back showing our protocol version */
-                  INCREMENT_DIAGNOSTIC(reconfigures);
               }
             }
 	  }else if( mode_ == MODE_SIZE_L ){   /* bottom half of message size */
@@ -244,8 +212,6 @@ namespace ros {
 	      mode_++;
 	    else {
 	      mode_ = MODE_FIRST_FF;          /* Abandon the frame if the msg len is wrong */
-              INCREMENT_DIAGNOSTIC(msg_len_checksum_fails);
-            }
 	  }else if( mode_ == MODE_TOPIC_L ){  /* bottom half of topic id */
             topic_ = data;
             mode_++;
@@ -273,8 +239,6 @@ namespace ros {
                 if(subscribers[topic_-100])
                   subscribers[topic_-100]->callback( message_in );
               }
-            } else { //failed msg checksum
-              INCREMENT_DIAGNOSTIC(msg_body_checksum_fails);
             }
           }
         }
@@ -293,7 +257,6 @@ namespace ros {
       virtual bool connected() {
         return configured_;
       };
-
 
       /********************************************************************
        * Time functions
@@ -330,15 +293,11 @@ namespace ros {
 
       void setNow( Time & new_now )
       {
-        #ifdef NH_DIAGNOSTICS
-        // TODO: check for big time jumps
-        #endif
         unsigned long ms = hardware_.time();
         sec_offset = new_now.sec - ms/1000 - 1;
         nsec_offset = new_now.nsec - (ms%1000)*1000000UL + 1000000000UL;
         normalizeSecNSec(sec_offset, nsec_offset);
       }
-
 
       /********************************************************************
        * Topic Management 
@@ -430,12 +389,10 @@ namespace ros {
         configured_ = true;
       }
 
-
       virtual int publish(int id, const Msg * msg)
       {
         if(id >= 100 && !configured_) 
 	  return 0;
-
 
         /* serialize message */
         int l = msg->serialize(message_out+7);
@@ -462,7 +419,6 @@ namespace ros {
           logerror("Message from device dropped: message larger than buffer.");
           return 0;
         }
-
       }
 
       /********************************************************************
@@ -501,9 +457,8 @@ namespace ros {
 
       rosserial_msgs::RequestParamResponse req_param_resp;
 
-
       bool requestParam(const char * name, int time_out =  1000){
-         param_recieved = false;
+        param_recieved = false;
         rosserial_msgs::RequestParamRequest req;
         req.name  = (char*)name;
         publish(rosserial_msgs::TopicInfo::ID_PARAMETER_REQUEST, &req);
@@ -534,7 +489,5 @@ namespace ros {
   };
 
 }
-
-
 
 #endif

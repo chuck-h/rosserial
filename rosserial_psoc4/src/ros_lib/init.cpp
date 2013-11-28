@@ -2,7 +2,6 @@
 #include "ros.h"
 #include "SysTimer.h"
 extern "C" {
-  // #include "device.h"
   #include "project.h"
 }
 

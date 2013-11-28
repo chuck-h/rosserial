@@ -447,7 +447,6 @@ class SerialClient:
             if checksum%256 == 255:
                 self.synced = True
                 try:
-                    #print "got msg on topic id %d"%topic_id
                     self.callbacks[topic_id](msg)
                 except KeyError:
                     rospy.logerr("Tried to publish before configured, topic id %d" % topic_id)
@@ -637,7 +636,6 @@ class SerialClient:
                 msg_checksum = 255 - ( ((topic&255) + (topic>>8) + sum([ord(x) for x in msg]))%256 )
                 data = "\xff" + self.protocol_ver  + chr(length&255) + chr(length>>8) + chr(msg_len_checksum) + chr(topic&255) + chr(topic>>8)
                 data = data + msg + chr(msg_checksum)
-                #print "sending msg on topic %d"%topic
                 self.port.write(data)
                 return length
 

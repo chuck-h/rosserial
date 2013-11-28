@@ -1,6 +1,6 @@
 <package>
   <name>rosserial_psoc4</name>
-  <version>0.5.4</version>
+  <version>0.5.1</version>
   <description>
     Libraries and examples for ROSserial usage on Cypress PSoC4 Platforms.
   </description>

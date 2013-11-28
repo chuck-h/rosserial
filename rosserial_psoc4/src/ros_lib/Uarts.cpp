@@ -17,7 +17,6 @@
 
 #include "Uarts.h"
 extern "C" {
-  //#include "device.h"
   #include "project.h"
 }
 
