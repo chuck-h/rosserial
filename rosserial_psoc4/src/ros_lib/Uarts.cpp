@@ -21,8 +21,12 @@ extern "C" {
 }
 
 void Uart::begin(unsigned long baud) {
+  // compute clock divider D = HFCLK/(baud * oversampling_factor)
+  uint32_t denom = baud * ROSSerial_UART_UART_OVS_FACTOR;
+  uint16_t divider = (CYDEV_BCLK__HFCLK__HZ + (denom/2))/denom;
+  ROSSerial_UART_SCBCLK_SetDividerValue(divider);
   ROSSerial_UART_Start();
-}; // TBD: set baud rate
+};
 
 int Uart::read(void) {
   int32_t data = -1;

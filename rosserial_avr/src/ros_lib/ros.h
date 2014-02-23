@@ -35,35 +35,24 @@
 #ifndef _ROS_H_
 #define _ROS_H_
 
-#include <stdint.h>
-
 #include "ros/node_handle.h"
-
-#include "Psoc4Hardware.h"
-
-#ifndef ROSSERIAL_PSOC4_MAX_SUBSCRIBERS
-#define ROSSERIAL_PSOC4_MAX_SUBSCRIBERS 10
-#endif
-#ifndef ROSSERIAL_PSOC4_MAX_PUBLISHERS
-#define ROSSERIAL_PSOC4_MAX_PUBLISHERS 20
-#endif
-#ifndef ROSSERIAL_PSOC4_INPUT_BUFFER_SIZE
-#define ROSSERIAL_PSOC4_INPUT_BUFFER_SIZE 200
-#endif
-#ifndef ROSSERIAL_PSOC4_OUTPUT_BUFFER_SIZE
-#define ROSSERIAL_PSOC4_OUTPUT_BUFFER_SIZE 200
-#endif
+#include "ArduinoHardware.h"
 
 namespace ros
 {
+#if defined(__AVR_ATmega8__) || defined(__AVR_ATmega168__)
+  /* downsize our buffers */
+  typedef NodeHandle_<ArduinoHardware, 6, 6, 150, 150> NodeHandle;
 
-  // template is <hardware type, max subs, max pubs, input buf chars, output buf chars>
-  typedef NodeHandle_<Psoc4Hardware,
-                      ROSSERIAL_PSOC4_MAX_SUBSCRIBERS,
-                      ROSSERIAL_PSOC4_MAX_PUBLISHERS,
-                      ROSSERIAL_PSOC4_INPUT_BUFFER_SIZE,
-                      ROSSERIAL_PSOC4_OUTPUT_BUFFER_SIZE> NodeHandle;
- 
+#elif defined(__AVR_ATmega328P__)
+
+  typedef NodeHandle_<ArduinoHardware, 25, 25, 280, 280> NodeHandle;
+
+#else
+
+  typedef NodeHandle_<ArduinoHardware> NodeHandle;
+
+#endif   
 }
 
 #endif

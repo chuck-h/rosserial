@@ -328,7 +328,7 @@ class SerialClient:
                 rospy.signal_shutdown("Error opening serial: %s" % e)
                 raise SystemExit
 
-        self.port.timeout = 0.01  # Edit the port timeout
+        self.port.timeout = 0.05  # Edit the port timeout
 
         time.sleep(0.1)           # Wait for ready (patch for Uno)
 
@@ -447,6 +447,7 @@ class SerialClient:
             if checksum%256 == 255:
                 self.synced = True
                 try:
+                    #print "got msg on topic id %d"%topic_id
                     self.callbacks[topic_id](msg)
                 except KeyError:
                     rospy.logerr("Tried to publish before configured, topic id %d" % topic_id)
@@ -468,6 +469,9 @@ class SerialClient:
             msg = TopicInfo()
             msg.deserialize(data)
             pub = Publisher(msg)
+            # test if topic id already in use
+            if msg.topic_id in self.publishers:
+                rospy.logwarn("Setting up duplicate topic %d" % msg.topic_id)
             self.publishers[msg.topic_id] = pub
             self.callbacks[msg.topic_id] = pub.handlePacket
             self.setPublishSize(msg.buffer_size)
@@ -480,6 +484,10 @@ class SerialClient:
         try:
             msg = TopicInfo()
             msg.deserialize(data)
+            # test if topic id already registered
+            if msg.topic_id in [sub.id for sub in self.subscribers.values()]:
+                rospy.logwarn("Ignored duplicate subscriber on %s [%s] as id %d" % (msg.topic_name, msg.message_type, msg.topic_id) )
+                return
             sub = Subscriber(msg, self)
             self.subscribers[msg.topic_name] = sub
             self.setSubscribeSize(msg.buffer_size)
@@ -636,6 +644,7 @@ class SerialClient:
                 msg_checksum = 255 - ( ((topic&255) + (topic>>8) + sum([ord(x) for x in msg]))%256 )
                 data = "\xff" + self.protocol_ver  + chr(length&255) + chr(length>>8) + chr(msg_len_checksum) + chr(topic&255) + chr(topic>>8)
                 data = data + msg + chr(msg_checksum)
+                #print "sending msg on topic %d at %f"%(topic, time.time())
                 self.port.write(data)
                 return length
 

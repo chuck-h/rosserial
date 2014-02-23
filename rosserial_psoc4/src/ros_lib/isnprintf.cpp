@@ -19,7 +19,7 @@ static void add_char(char **ps, int* pchars_generated, int buf_len, char ch)
 }
 
       
-static char* change(uint32_t Index)
+static char* change(uint8_t Index)
 {
     return (char*)("0123456789abcdef"+Index);
 }
@@ -29,7 +29,8 @@ int isnprintf(char *s, int buf_len, const char *pszFmt,...)
 {
     int chars_generated=0;
     char *pszVal;
-    uint32_t iVal, xVal, i = 0, buffer[12], index = 1;
+    uint32_t iVal, xVal, i = 0, index = 1;
+    uint8_t buffer[12];
     char cVal;
     uint32_t *pArg;
     pArg =(uint32_t *)&pszFmt;
@@ -55,6 +56,11 @@ int isnprintf(char *s, int buf_len, const char *pszFmt,...)
         if(*pszFmt == 'd')
         {
             iVal = pArg[index++];
+            // handle negative sign
+            if (iVal & 0x8000) {
+              iVal = ~iVal + 1;
+              add_char(&s, &chars_generated, buf_len, '-');
+            }
             i = 0;
             do{
                 buffer[i++] = iVal % 10;

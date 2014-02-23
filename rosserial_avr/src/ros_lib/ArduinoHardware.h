@@ -32,38 +32,67 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ROS_H_
-#define _ROS_H_
+#ifndef ROS_ARDUINO_HARDWARE_H_
+#define ROS_ARDUINO_HARDWARE_H_
 
-#include <stdint.h>
+#define ARDUINO 154
 
-#include "ros/node_handle.h"
-
-#include "Psoc4Hardware.h"
-
-#ifndef ROSSERIAL_PSOC4_MAX_SUBSCRIBERS
-#define ROSSERIAL_PSOC4_MAX_SUBSCRIBERS 10
-#endif
-#ifndef ROSSERIAL_PSOC4_MAX_PUBLISHERS
-#define ROSSERIAL_PSOC4_MAX_PUBLISHERS 20
-#endif
-#ifndef ROSSERIAL_PSOC4_INPUT_BUFFER_SIZE
-#define ROSSERIAL_PSOC4_INPUT_BUFFER_SIZE 200
-#endif
-#ifndef ROSSERIAL_PSOC4_OUTPUT_BUFFER_SIZE
-#define ROSSERIAL_PSOC4_OUTPUT_BUFFER_SIZE 200
+#if ARDUINO>=100
+  #include <Arduino.h>  // Arduino 1.0
+#else
+  #include <WProgram.h>  // Arduino 0022
 #endif
 
-namespace ros
-{
+#ifdef _SAM3XA_
+  #include <UARTClass.h>  // Arduino Due
+  #define SERIAL_CLASS UARTClass
+#else
+  #include <HardwareSerial.h>  // Arduino AVR
+  #define SERIAL_CLASS HardwareSerial
+#endif
 
-  // template is <hardware type, max subs, max pubs, input buf chars, output buf chars>
-  typedef NodeHandle_<Psoc4Hardware,
-                      ROSSERIAL_PSOC4_MAX_SUBSCRIBERS,
-                      ROSSERIAL_PSOC4_MAX_PUBLISHERS,
-                      ROSSERIAL_PSOC4_INPUT_BUFFER_SIZE,
-                      ROSSERIAL_PSOC4_OUTPUT_BUFFER_SIZE> NodeHandle;
- 
-}
+class ArduinoHardware {
+  public:
+    ArduinoHardware(SERIAL_CLASS* io , long baud= 57600){
+      iostream = io;
+      baud_ = baud;
+    }
+    ArduinoHardware()
+    {
+#if defined(USBCON) && !defined(_SAM3XA_)
+      /* Leonardo support */
+      iostream = &Serial1;
+#else
+      iostream = &Serial;
+#endif
+      baud_ = 57600;
+    }
+    ArduinoHardware(ArduinoHardware& h){
+      this->iostream = iostream;
+      this->baud_ = h.baud_;
+    }
+  
+    void setBaud(long baud){
+      this->baud_= baud;
+    }
+  
+    int getBaud(){return baud_;}
+
+    void init(){
+      iostream->begin(baud_);
+    }
+
+    int read(){return iostream->read();};
+    void write(uint8_t* data, int length){
+      for(int i=0; i<length; i++)
+        iostream->write(data[i]);
+    }
+
+    unsigned long time(){return millis();}
+
+  protected:
+    SERIAL_CLASS* iostream;
+    long baud_;
+};
 
 #endif
