@@ -6,7 +6,11 @@
  * an analog value into ROS in a pinch.
  */
 
-#include <WProgram.h>
+#if ARDUINO>=100
+  #include <Arduino.h>  // Arduino 1.0
+#else
+  #include <WProgram.h>  // Arduino 0022
+#endif
 #include <ros.h>
 #include <rosserial_arduino/Adc.h>
 

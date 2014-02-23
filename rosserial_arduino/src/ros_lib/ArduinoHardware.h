@@ -36,27 +36,32 @@
 #define ROS_ARDUINO_HARDWARE_H_
 
 #if ARDUINO>=100
-#include <Arduino.h> // Arduino 1.0
+  #include <Arduino.h>  // Arduino 1.0
 #else
-#include <WProgram.h> // Arduino 0022
+  #include <WProgram.h>  // Arduino 0022
 #endif
-#ifdef _SAM3XA_ // Arduino Due
-#include <UARTClass.h>
-#define SERIAL_CLASS UARTClass
+#ifdef _SAM3XA_
+  #include <UARTClass.h>  // Arduino Due
+  #define SERIAL_CLASS UARTClass
 #else
-#include <HardwareSerial.h>
-#define SERIAL_CLASS HardwareSerial
+  #include <HardwareSerial.h>  // Arduino AVR
+  #define SERIAL_CLASS HardwareSerial
 #endif
 
 class ArduinoHardware {
   public:
-    ArduinoHardware(HardwareSerial* io , long baud= 57600){
-      iostream = static_cast<SERIAL_CLASS*>(io);
+    ArduinoHardware(SERIAL_CLASS* io , long baud= 57600){
+      iostream = io;
       baud_ = baud;
     }
     ArduinoHardware()
     {
+#if defined(USBCON) && !defined(_SAM3XA_)
+      /* Leonardo support */
+      iostream = &Serial1;
+#else
       iostream = &Serial;
+#endif
       baud_ = 57600;
     }
     ArduinoHardware(ArduinoHardware& h){

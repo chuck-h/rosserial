@@ -1,8 +1,9 @@
 
 #include "ros.h"
 #include "SysTimer.h"
-#include "device.h"
-
+extern "C" {
+  #include "project.h"
+}
 
 void init(void)
 {

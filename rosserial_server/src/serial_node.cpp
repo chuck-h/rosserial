@@ -83,7 +83,7 @@ private:
   void connect_with_reconnection(bool log_errors = true) {
     if (!attempt_connection(log_errors)) {  
       if (log_errors) {
-        ROS_INFO("Attempting reconnection every %ld ms.", interval_.total_milliseconds());
+        ROS_INFO("Attempting reconnection every %lld ms.", interval_.total_milliseconds());
       }
       timer_.expires_from_now(interval_);
       timer_.async_wait(boost::bind(&SerialSession::connect_with_reconnection, this, false));
@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
   // Initialize ROS.
   ros::init(argc, argv, "rosserial_server_serial_node");
   ros::NodeHandle nh("~");
-  std::string port; nh.param<std::string>("port", port, "/dev/ttyUSB0");
+  std::string port; nh.param<std::string>("port", port, "/dev/ttyACM0");
   int baud; nh.param<int>("baud", baud, 57600);
 
   // ROS background thread.

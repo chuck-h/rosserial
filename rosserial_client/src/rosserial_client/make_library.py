@@ -57,7 +57,6 @@ def type_to_var(ty):
     }
     return lookup[ty]
 
-
 #####################################################################
 # Data Types
 
@@ -246,7 +245,7 @@ class ArrayDataType(PrimitiveDataType):
             c.serialize(f)
             f.write('      }\n')
         else:
-            f.write('      unsigned char * %s_val = (unsigned char *) this->%s;\n' % (self.name, self.name))
+            #f.write('      unsigned char * %s_val = (unsigned char *) this->%s;\n' % (self.name, self.name))
             f.write('      for( uint8_t i = 0; i < %d; i++){\n' % (self.size) )
             c.serialize(f)
             f.write('      }\n')
@@ -260,6 +259,9 @@ class ArrayDataType(PrimitiveDataType):
                 f.write('      if(%s_lengthT > %s_length)\n' % (self.name, self.name))
                 f.write('        this->%s = (%s*)realloc(this->%s, %s_lengthT * sizeof(%s));\n' % (self.name, self.type, self.name, self.name, self.type))
                 f.write('      %s_length = %s_lengthT;\n' % (self.name, self.name))
+            else:
+                f.write('      if(%s_lengthT < %s_length)\n' % (self.name, self.name))
+                f.write('        %s_length = %s_lengthT;\n' % (self.name, self.name))
             f.write('      offset += 3;\n')
             # copy to array
             f.write('      for( uint8_t i = 0; i < %s_lengthT; i++){\n' % (self.name) )
@@ -270,7 +272,7 @@ class ArrayDataType(PrimitiveDataType):
             f.write('      }\n')
         else:
             c = self.cls(self.name+"[i]", self.type, self.bytes)
-            f.write('      uint8_t * %s_val = (uint8_t*) this->%s;\n' % (self.name, self.name))
+            #f.write('      uint8_t * %s_val = (uint8_t*) this->%s;\n' % (self.name, self.name))
             f.write('      for( uint8_t i = 0; i < %d; i++){\n' % (self.size) )
             c.deserialize(f)
             f.write('      }\n')
@@ -359,8 +361,10 @@ class Message:
         f.write('    virtual int serialize(unsigned char *outbuffer) const\n')
         f.write('    {\n')
         f.write('      int offset = 0;\n')
+        f.write('#ifndef ROS_MSG_DONT_SERIALIZE\n')
         for d in self.data:
             d.serialize(f)
+        f.write('#endif\n')
         f.write('      return offset;\n');
         f.write('    }\n')
         f.write('\n')
@@ -370,8 +374,10 @@ class Message:
         f.write('    virtual int deserialize(unsigned char *inbuffer)\n')
         f.write('    {\n')
         f.write('      int offset = 0;\n')
+        f.write('#ifndef ROS_MSG_DONT_DESERIALIZE\n')
         for d in self.data:
             d.deserialize(f)
+        f.write('#endif\n')
         f.write('     return offset;\n');
         f.write('    }\n')
         f.write('\n')

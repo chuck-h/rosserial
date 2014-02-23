@@ -14,17 +14,19 @@ APP=pubsub_test
 CREATORDIR=./rosserial_psoc4/$(APP).cydsn
 $(info Using creator directory $(CREATORDIR))
 
+TOOLSDIR=/usr/share/arduino-1.5.4/hardware/tools
+
 PROJECT=$(APP)
 ODIR=./out/
 GENSRCDIR=$(CREATORDIR)/Generated_Source/PSoC4/
 COMPONENTLIB=./CyComponentLibrary.a
 PROJLIB=$(ODIR)$(PROJECT).a
 
-CC=~/arduino-1.5.2/hardware/tools/g++_arm_none_eabi/bin/arm-none-eabi-gcc
-AR=~/arduino-1.5.2/hardware/tools/g++_arm_none_eabi/bin/arm-none-eabi-ar
-ASM=~/arduino-1.5.2/hardware/tools/g++_arm_none_eabi/bin/arm-none-eabi-as
-OBJCOPY=~/arduino-1.5.2/hardware/tools/g++_arm_none_eabi/bin/arm-none-eabi-objcopy
-SIZE=~/arduino-1.5.2/hardware/tools/g++_arm_none_eabi/bin/arm-none-eabi-size
+CC=$(TOOLSDIR)/g++_arm_none_eabi/bin/arm-none-eabi-gcc
+AR=$(TOOLSDIR)/g++_arm_none_eabi/bin/arm-none-eabi-ar
+ASM=$(TOOLSDIR)/g++_arm_none_eabi/bin/arm-none-eabi-as
+OBJCOPY=$(TOOLSDIR)/g++_arm_none_eabi/bin/arm-none-eabi-objcopy
+SIZE=$(TOOLSDIR)/g++_arm_none_eabi/bin/arm-none-eabi-size
 
 PROJLIBCFLAGS= -I. -Wno-main -I$(GENSRCDIR) -mcpu=cortex-m0 -mthumb -Wall -g -D DEBUG -ffunction-sections
 PROJLIBASMFLAGS= -I. -I$(GENSRCDIR) -mcpu=cortex-m0 -mthumb -g 
@@ -38,7 +40,7 @@ PROJLIBOBJS_S:=$(patsubst $(GENSRCDIR)%.s, $(ODIR)%.o, $(filter $(GENSRCDIR)%.s,
 SOURCEDIR=./libraries/ros_lib/
 SOURCES:=$(wildcard $(SOURCEDIR)*.cpp)
 OBJECTS:=$(patsubst $(SOURCEDIR)%.cpp, $(ODIR)%.o, $(SOURCES))
-OBJECTS:=$(filter-out $(ODIR)init.o, $(OBJECTS))
+OBJECTS:=$(filter-out $(ODIR)init.o $(ODIR)Uarts.o, $(OBJECTS))
 
 APPDIR=$(SOURCEDIR)examples/$(APP)/
 
@@ -68,14 +70,17 @@ $(ODIR)Cm0Start.o:$(GENSRCDIR)Cm0Start.c
 $(ODIR)init.o:$(SOURCEDIR)init.cpp
 	$(CC) -I$(CREATORDIR) -I$(GENSRCDIR) $(CXXFLAGS) -Wa,-alh=$*.lst -c $< -o $@
 
+$(ODIR)Uarts.o:$(SOURCEDIR)Uarts.cpp
+	$(CC) -I$(CREATORDIR) -I$(GENSRCDIR) $(CXXFLAGS) -Wa,-alh=$*.lst -c $< -o $@
+
 $(ODIR)$(APP).o:$(APPDIR)$(APP).cpp
 	$(CC) -I$(CREATORDIR) -I$(GENSRCDIR) $(CXXFLAGS) -Wa,-alh=$*.lst -c $< -o $@
 
 $(OBJECTS):$(ODIR)%.o:$(SOURCEDIR)%.cpp
 	$(CC) $(CXXFLAGS) -Wa,-alh=$(ODIR)$*.lst -c $< -o $@
 
-exec.elf: $(OBJECTS) $(PROJLIB) $(ODIR)Cm0Start.o $(ODIR)init.o $(ODIR)$(APP).o
-	$(CC) $(LDFLAGS) -Wl,--start-group  -o $@ $(OBJECTS) $(ODIR)$(APP).o $(ODIR)Cm0Start.o $(ODIR)init.o $(PROJLIB) $(COMPONENTLIB) -Wl,--end-group
+exec.elf: $(OBJECTS) $(PROJLIB) $(ODIR)Cm0Start.o $(ODIR)init.o $(ODIR)Uarts.o $(ODIR)$(APP).o
+	$(CC) $(LDFLAGS) -Wl,--start-group  -o $@ $(OBJECTS) $(ODIR)$(APP).o $(ODIR)Cm0Start.o $(ODIR)init.o $(ODIR)Uarts.o $(PROJLIB) $(COMPONENTLIB) -Wl,--end-group
 
 exec.ihx: exec.elf
 	$(OBJCOPY) -O ihex $< $@

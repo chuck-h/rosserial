@@ -35,20 +35,17 @@
 #ifndef _ROS_H_
 #define _ROS_H_
 
-#include "ros/node_handle.h"
-//
 #include <stdint.h>
-//#include <string.h>
-//#include <stdlib.h>
-//
 
+#include "ros/node_handle.h"
 
 #include "Psoc4Hardware.h"
 
 namespace ros
 {
 
-  typedef NodeHandle_<Psoc4Hardware, 6, 6, 200, 200> NodeHandle;
+  // template is <hardware type, max subs, max pubs, input buf chars, output buf chars>
+  typedef NodeHandle_<Psoc4Hardware, 10, 20, 200, 200> NodeHandle;
  
 }
 
