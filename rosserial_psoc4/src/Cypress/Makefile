@@ -9,7 +9,7 @@
 #  Use PSoC Creator "program" function (ctrl-F5) to program the Pioneer Kit board.
 
 # name of example application
-APP=HelloWorld
+APP=pubsub_test
 
 CREATORDIR=./rosserial_psoc4/$(APP).cydsn
 $(info Using creator directory $(CREATORDIR))
