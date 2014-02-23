@@ -35,12 +35,18 @@
 #ifndef ROS_NODE_HANDLE_H_
 #define ROS_NODE_HANDLE_H_
 
+#ifndef PARAM_REQ_SUPPORT
+#define PARAM_REQ_SUPPORT 1
+#endif
+
 #include "std_msgs/Time.h"
 #include "rosserial_msgs/TopicInfo.h"
 #include "rosserial_msgs/Log.h"
+#if PARAM_REQ_SUPPORT
 #include "rosserial_msgs/RequestParam.h"
+#endif
 
-#define SYNC_SECONDS        5
+#define SYNC_SECONDS        2
 
 #define MODE_FIRST_FF       0
 /*
@@ -65,7 +71,7 @@
 
 
 
-#define MSG_TIMEOUT 20  //20 milliseconds to recieve all of message data
+#define MSG_TIMEOUT 200  // was 20 milliseconds to recieve all of message data
 
 #include "msg.h"
 
@@ -85,8 +91,6 @@ namespace ros {
 #include "service_client.h"
 
 namespace ros {
-
-  using rosserial_msgs::TopicInfo;
 
   /* Node Handle */
   template<class Hardware,
@@ -115,27 +119,7 @@ namespace ros {
        * Setup Functions
        */
     public:
-      NodeHandle_() : configured_(false) {
-
-        for(unsigned int i=0; i< MAX_PUBLISHERS; i++) 
-	   publishers[i] = 0;
-
-        for(unsigned int i=0; i< MAX_SUBSCRIBERS; i++) 
-	   subscribers[i] = 0;
-
-        for(unsigned int i=0; i< INPUT_SIZE; i++) 
-	   message_in[i] = 0;
-
-        for(unsigned int i=0; i< OUTPUT_SIZE; i++) 
-	   message_out[i] = 0;
-
-        req_param_resp.ints_length = 0;
-        req_param_resp.ints = NULL;
-        req_param_resp.floats_length = 0;
-        req_param_resp.floats = NULL;
-        req_param_resp.ints_length = 0;
-        req_param_resp.ints = NULL;
-      }
+      NodeHandle_() : configured_(false) {}
       
       Hardware* getHardware(){
         return &hardware_;
@@ -184,7 +168,7 @@ namespace ros {
 
         /* restart if timed out */
         unsigned long c_time = hardware_.time();
-        if( (c_time - last_sync_receive_time) > (SYNC_SECONDS*2200) ){
+        if( (c_time - last_sync_receive_time) > (SYNC_SECONDS*1100) ){
             configured_ = false;
          }
          
@@ -217,8 +201,9 @@ namespace ros {
               mode_++;
             }else{
               mode_ = MODE_FIRST_FF;
-              if (configured_ == false)
+              if (configured_ == false) {
                   requestSyncTime(); 	/* send a msg back showing our protocol version */
+              }
             }
 	  }else if( mode_ == MODE_SIZE_L ){   /* bottom half of message size */
             bytes_ = data;
@@ -231,8 +216,9 @@ namespace ros {
           }else if( mode_ == MODE_SIZE_CHECKSUM ){  
             if( (checksum_%256) == 255)
 	      mode_++;
-	    else 
+	    else {
 	      mode_ = MODE_FIRST_FF;          /* Abandon the frame if the msg len is wrong */
+            }
 	  }else if( mode_ == MODE_TOPIC_L ){  /* bottom half of topic id */
             topic_ = data;
             mode_++;
@@ -245,17 +231,19 @@ namespace ros {
           }else if( mode_ == MODE_MSG_CHECKSUM ){ /* do checksum */
             mode_ = MODE_FIRST_FF;
             if( (checksum_%256) == 255){
-              if(topic_ == TopicInfo::ID_PUBLISHER){
+              if(topic_ == rosserial_msgs::TopicInfo::ID_PUBLISHER){
                 requestSyncTime();
                 negotiateTopics();
                 last_sync_time = c_time;
                 last_sync_receive_time = c_time;
                 return -1;
-              }else if(topic_ == TopicInfo::ID_TIME){
+              }else if(topic_ == rosserial_msgs::TopicInfo::ID_TIME){
                 syncTime(message_in);
-              }else if (topic_ == TopicInfo::ID_PARAMETER_REQUEST){
+              #if PARAM_REQ_SUPPORT
+              }else if (topic_ == rosserial_msgs::TopicInfo::ID_PARAMETER_REQUEST){
                   req_param_resp.deserialize(message_in);
                   param_recieved= true;
+              #endif
               }else{
                 if(subscribers[topic_-100])
                   subscribers[topic_-100]->callback( message_in );
@@ -286,7 +274,7 @@ namespace ros {
       void requestSyncTime()
       {
         std_msgs::Time t;
-        publish(TopicInfo::ID_TIME, &t);
+        publish(rosserial_msgs::TopicInfo::ID_TIME, &t);
         rt_time = hardware_.time();
       }
 
@@ -433,20 +421,18 @@ namespace ros {
           chk += message_out[i];
         l += 7;
         message_out[l++] = 255 - (chk%256);
-
         if( l <= OUTPUT_SIZE ){
           hardware_.write(message_out, l);
           return l;
         }else{
           logerror("Message from device dropped: message larger than buffer.");
-          return -1;
+          return 0;
         }
       }
 
       /********************************************************************
        * Logging
        */
-
     private:
       void log(char byte, const char * msg){
         rosserial_msgs::Log l;
@@ -475,17 +461,18 @@ namespace ros {
       /********************************************************************
        * Parameters
        */
-
+    #if PARAM_REQ_SUPPORT
     private:
       bool param_recieved;
+
       rosserial_msgs::RequestParamResponse req_param_resp;
 
       bool requestParam(const char * name, int time_out =  1000){
         param_recieved = false;
         rosserial_msgs::RequestParamRequest req;
         req.name  = (char*)name;
-        publish(TopicInfo::ID_PARAMETER_REQUEST, &req);
-        unsigned int end_time = hardware_.time() + time_out;
+        publish(rosserial_msgs::TopicInfo::ID_PARAMETER_REQUEST, &req);
+        unsigned long end_time = hardware_.time() + time_out;
         while(!param_recieved ){
           spinOnce();
           if (hardware_.time() > end_time) return false;
@@ -494,39 +481,22 @@ namespace ros {
       }
 
     public:
-      bool getParam(const char* name, int* param, int length =1){
-        if (requestParam(name) ){
-          if (length == req_param_resp.ints_length){
-            //copy it over
-            for(int i=0; i<length; i++)
-              param[i] = req_param_resp.ints[i];
-            return true;
-          }
-        }
-        return false;
+      bool getParam(const char* name, int32_t* param, int length =1){
+        req_param_resp.ints_length = length;
+        req_param_resp.ints = param;
+        return requestParam(name);
       }
       bool getParam(const char* name, float* param, int length=1){
-        if (requestParam(name) ){
-          if (length == req_param_resp.floats_length){
-            //copy it over
-            for(int i=0; i<length; i++) 
-              param[i] = req_param_resp.floats[i];
-            return true;
-          }
-        }
-        return false;
+        req_param_resp.floats_length = length;
+        req_param_resp.floats = param;
+        return requestParam(name);
       }
       bool getParam(const char* name, char** param, int length=1){
-        if (requestParam(name) ){
-          if (length == req_param_resp.strings_length){
-            //copy it over
-            for(int i=0; i<length; i++)
-              strcpy(param[i],req_param_resp.strings[i]);
-            return true;
-          }
-        }
-        return false;
-      }  
+        req_param_resp.strings_length = length;
+        req_param_resp.strings = param;
+        return requestParam(name);
+      } 
+    #endif
   };
 
 }

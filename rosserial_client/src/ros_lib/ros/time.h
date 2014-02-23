@@ -38,6 +38,7 @@
 #include <ros/duration.h>
 #include <math.h>
 
+
 namespace ros
 {
   void normalizeSecNSec(unsigned long &sec, unsigned long &nsec);
@@ -52,10 +53,10 @@ namespace ros
       {
         normalizeSecNSec(sec, nsec);  
       } 
-        
+      #ifndef ROS_NO_FLOATS
       double toSec() const { return (double)sec + 1e-9*(double)nsec; };
       void fromSec(double t) { sec = (unsigned long) floor(t); nsec = (unsigned long) round((t-sec) * 1e9); };
-
+      #endif
       unsigned long toNsec() { return (unsigned long)sec*1000000000ull + (unsigned long)nsec; };
       Time& fromNSec(long t);
 
