@@ -218,6 +218,7 @@ namespace ros {
 	      mode_++;
 	    else {
 	      mode_ = MODE_FIRST_FF;          /* Abandon the frame if the msg len is wrong */
+            }
 	  }else if( mode_ == MODE_TOPIC_L ){  /* bottom half of topic id */
             topic_ = data;
             mode_++;
