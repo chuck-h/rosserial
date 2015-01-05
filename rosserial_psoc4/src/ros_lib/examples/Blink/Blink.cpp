@@ -2,32 +2,34 @@
  * rosserial Subscriber Example
  * Blinks an LED on callback
  */
+ 
+extern "C" {
+  #include "project.h"
+}
 
 #include <ros.h>
 #include <std_msgs/Empty.h>
+extern ros::NodeHandle  nh;
 
-ros::NodeHandle  nh;
+namespace Blink {
 
-bool ledOn;
+uint8_t ledOn;
 void messageCb( const std_msgs::Empty& toggle_msg){
-  ledOn = !ledOn;
-  //digitalWrite(13, ledOn ? HIGH : LOW);   // blink the led
+  ledOn = 1-ledOn;
 }
 
 ros::Subscriber<std_msgs::Empty> sub("toggle_led", &messageCb );
 
 void setup()
-{ 
-  //pinMode(13, OUTPUT);
-  //digitalWrite(13, LOW);
-  ledOn = false;
-  nh.initNode();
+{
+  ledOn = 0;
+  P1_6_Write(ledOn);
   nh.subscribe(sub);
 }
 
 void loop()
 {  
-  nh.spinOnce();
-  delay(1);
+  P1_6_Write(ledOn);
 }
 
+} // namespace Blink
