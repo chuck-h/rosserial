@@ -48,10 +48,8 @@ namespace ros {
         topic_(topic_name), 
         msg_(msg),
         endpoint_(endpoint) {};
-      // rosserial standard signature
+
       int publish( const Msg * msg ) { return nh_->publish(id_, msg); };
-      // roscpp-compatible signature
-      int publish( const Msg & msg ) { return nh_->publish(id_, &msg); }; 
       int getEndpointType(){ return endpoint_; }
 
       const char * topic_;

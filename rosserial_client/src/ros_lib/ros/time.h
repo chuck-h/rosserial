@@ -38,7 +38,6 @@
 #include <ros/duration.h>
 #include <math.h>
 
-
 namespace ros
 {
   void normalizeSecNSec(unsigned long &sec, unsigned long &nsec);

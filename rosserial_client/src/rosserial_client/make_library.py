@@ -171,20 +171,15 @@ class StringDataType(PrimitiveDataType):
     def serialize(self, f):
         cn = self.name.replace("[","").replace("]","")
         f.write('      uint32_t length_%s = strlen( (const char*) this->%s);\n' % (cn,self.name))
-        f.write('      *(outbuffer + offset++) = (length_%s >> (8 * %d)) & 0xff;\n' % (cn,0))
-        f.write('      *(outbuffer + offset++) = (length_%s >> (8 * %d)) & 0xff;\n' % (cn,1))
-        f.write('      *(outbuffer + offset++) = (length_%s >> (8 * %d)) & 0xff;\n' % (cn,2))
-        f.write('      *(outbuffer + offset++) = (length_%s >> (8 * %d)) & 0xff;\n' % (cn,3))
+        f.write('      memcpy(outbuffer + offset, &length_%s, sizeof(uint32_t));\n' % cn)        
+        f.write('      offset += 4;\n')
         f.write('      memcpy(outbuffer + offset, this->%s, length_%s);\n' % (self.name,cn))
         f.write('      offset += length_%s;\n' % cn)
 
     def deserialize(self, f):
         cn = self.name.replace("[","").replace("]","")
-        f.write('      uint32_t length_%s = 0;\n' % cn)
-        f.write('      length_%s |= ((uint32_t) (*(inbuffer + offset + %d))) << (8 * %d);\n' % (cn,0,0) )
-        f.write('      length_%s |= ((uint32_t) (*(inbuffer + offset + %d))) << (8 * %d);\n' % (cn,1,1) )
-        f.write('      length_%s |= ((uint32_t) (*(inbuffer + offset + %d))) << (8 * %d);\n' % (cn,2,2) )
-        f.write('      length_%s |= ((uint32_t) (*(inbuffer + offset + %d))) << (8 * %d);\n' % (cn,3,3) )
+        f.write('      uint32_t length_%s;\n' % cn)
+        f.write('      memcpy(&length_%s, (inbuffer + offset), sizeof(uint32_t));\n' % cn)
         f.write('      offset += 4;\n')
         f.write('      for(unsigned int k= offset; k< offset+length_%s; ++k){\n'%cn) #shift for null character
         f.write('          inbuffer[k-1]=inbuffer[k];\n')
@@ -216,7 +211,7 @@ class TimeDataType(PrimitiveDataType):
 
 class ArrayDataType(PrimitiveDataType):
     global USE_MALLOC
-    #TODO (8-Sep-2013) test variable-size arrays more thoroughly with USE_MALLOC logic
+
     def __init__(self, name, ty, bytes, cls, array_size=None):
         self.name = name
         self.type = ty
@@ -245,7 +240,6 @@ class ArrayDataType(PrimitiveDataType):
             c.serialize(f)
             f.write('      }\n')
         else:
-            #f.write('      unsigned char * %s_val = (unsigned char *) this->%s;\n' % (self.name, self.name))
             f.write('      for( uint8_t i = 0; i < %d; i++){\n' % (self.size) )
             c.serialize(f)
             f.write('      }\n')
@@ -272,7 +266,6 @@ class ArrayDataType(PrimitiveDataType):
             f.write('      }\n')
         else:
             c = self.cls(self.name+"[i]", self.type, self.bytes)
-            #f.write('      uint8_t * %s_val = (uint8_t*) this->%s;\n' % (self.name, self.name))
             f.write('      for( uint8_t i = 0; i < %d; i++){\n' % (self.size) )
             c.deserialize(f)
             f.write('      }\n')

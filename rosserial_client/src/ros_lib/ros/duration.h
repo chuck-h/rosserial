@@ -51,6 +51,7 @@ namespace ros {
       {
         normalizeSecNSecSigned(sec, nsec);
       }
+
       #ifndef ROS_NO_FLOATS
       double toSec() const { return (double)sec + 1e-9*(double)nsec; };
       void fromSec(double t) { sec = (unsigned long) floor(t); nsec = (unsigned long) round((t-sec) * 1e9); };
