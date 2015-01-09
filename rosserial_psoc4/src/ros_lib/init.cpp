@@ -1,4 +1,10 @@
-
+/* Clock initialization for PSoc4 "RosOnAStick"
+ *
+ * Copyright C. Harrison
+ * BSD 2-clause license http://opensource.org/licenses/BSD-2-Clause
+ *
+ */
+ 
 #include "ros.h"
 #include "SysTimer.h"
 extern "C" {

@@ -18,16 +18,6 @@
 
 uint32_t SysTimer::millis_;
 
-/*****************************************************************************
-* Function Name: SysTick_ISR
-******************************************************************************
-* Summary: Interrupt on Cortex-M0 SysTick. Toggle LED.
-*
-* Parameters: none; it's an ISR function
-*
-* Return: none; it's an ISR function
-*
-*****************************************************************************/
 CY_ISR(SysTick_ISR)
 {
     ++SysTimer::millis_;
