@@ -62,3 +62,4 @@ void loop()
   CapSense_ScanEnabledWidgets();
   return;
 }
+} // namespace Capsense
