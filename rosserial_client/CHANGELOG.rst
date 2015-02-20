@@ -2,6 +2,44 @@
 Changelog for package rosserial_client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.3 (2014-11-05)
+------------------
+* Move avr serialization logic to Msg class, add gtest to exercise it.
+* Fixed the deserialization of avr64bit in order to support negative numbers.
+* Contributors: Martin Gerdzhev, Mike Purvis
+
+0.6.2 (2014-09-10)
+------------------
+* Generic CMake helpers for ros_lib generation and in-package firmwares.
+* Fix output of make_library when package has only messages
+* Added time out to the state machine
+* Contributors: Jason Scatena, Michael Ferguson, Mike Purvis
+
+0.6.1 (2014-06-30)
+------------------
+* Remove ID_TX_STOP define
+* Fix ID_TX_STOP in the client lib.
+* Contributors: Mike Purvis
+
+0.6.0 (2014-06-11)
+------------------
+* Remove include of ros.h from time.cpp
+* No xx_val pointers for fixed-length arrays of messages.
+* Use const char* instead of char* for strings in messages.
+* Contributors: Mike Purvis
+
+0.5.6 (2014-06-11)
+------------------
+* Add Mike Purvis as maintainer
+* make tf topic absolute instead of relative to prevent remapping with <group> tag
+* fix: msg id serialization
+* fix: wrong message lenght, if message size more than 255
+* fix odometry deserialization error http://answers.ros.org/question/73807/rosserial-deserialization-error/
+* add better debugging information when packages are missing dependencies
+* remove ID_TX_STOP from rosserial_msgs/msg/TopicInfo.msg, using hardcode modification.
+* fix the dupilcated registration problem of subscriber
+* Contributors: Michael Ferguson, Mike Purvis, Moju Zhao, agentx3r, denis
+
 0.5.5 (2014-01-14)
 ------------------
 

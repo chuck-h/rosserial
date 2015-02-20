@@ -1,4 +1,4 @@
-/* 
+/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Willow Garage, Inc.
@@ -34,8 +34,6 @@
 
 #ifndef _ROS_H_
 #define _ROS_H_
-
-#include <stdint.h>
 
 #include "ros/node_handle.h"
 

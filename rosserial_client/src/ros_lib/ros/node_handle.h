@@ -70,7 +70,6 @@
 #define MODE_MSG_CHECKSUM   8   // checksum for msg and topic id 
 
 
-
 #define MSG_TIMEOUT 200  // was 20 milliseconds to recieve all of message data
 
 #include "msg.h"
@@ -91,6 +90,8 @@ namespace ros {
 #include "service_client.h"
 
 namespace ros {
+
+  using rosserial_msgs::TopicInfo;
 
   /* Node Handle */
   template<class Hardware,
@@ -119,8 +120,28 @@ namespace ros {
        * Setup Functions
        */
     public:
-      NodeHandle_() : configured_(false) {}
-      
+      NodeHandle_() : configured_(false) {
+#if true
+        for(unsigned int i=0; i< MAX_PUBLISHERS; i++) 
+	   publishers[i] = 0;
+
+        for(unsigned int i=0; i< MAX_SUBSCRIBERS; i++) 
+	   subscribers[i] = 0;
+
+        for(unsigned int i=0; i< INPUT_SIZE; i++) 
+	   message_in[i] = 0;
+
+        for(unsigned int i=0; i< OUTPUT_SIZE; i++) 
+	   message_out[i] = 0;
+
+        req_param_resp.ints_length = 0;
+        req_param_resp.ints = NULL;
+        req_param_resp.floats_length = 0;
+        req_param_resp.floats = NULL;
+        req_param_resp.ints_length = 0;
+        req_param_resp.ints = NULL;
+      }
+#endif      
       Hardware* getHardware(){
         return &hardware_;
       }
@@ -196,14 +217,18 @@ namespace ros {
               mode_++;
               last_msg_timeout_time = c_time + MSG_TIMEOUT;
             }
+            else if( hardware_.time() - c_time > (SYNC_SECONDS)){
+              /* We have been stuck in spinOnce too long, return error */
+              configured_=false;
+              return -2;
+            }
           }else if( mode_ == MODE_PROTOCOL_VER ){
             if(data == PROTOCOL_VER){
               mode_++;
             }else{
               mode_ = MODE_FIRST_FF;
-              if (configured_ == false) {
+              if (configured_ == false)
                   requestSyncTime(); 	/* send a msg back showing our protocol version */
-              }
             }
 	  }else if( mode_ == MODE_SIZE_L ){   /* bottom half of message size */
             bytes_ = data;
@@ -216,9 +241,8 @@ namespace ros {
           }else if( mode_ == MODE_SIZE_CHECKSUM ){  
             if( (checksum_%256) == 255)
 	      mode_++;
-	    else {
+	    else 
 	      mode_ = MODE_FIRST_FF;          /* Abandon the frame if the msg len is wrong */
-            }
 	  }else if( mode_ == MODE_TOPIC_L ){  /* bottom half of topic id */
             topic_ = data;
             mode_++;
@@ -231,19 +255,21 @@ namespace ros {
           }else if( mode_ == MODE_MSG_CHECKSUM ){ /* do checksum */
             mode_ = MODE_FIRST_FF;
             if( (checksum_%256) == 255){
-              if(topic_ == rosserial_msgs::TopicInfo::ID_PUBLISHER){
+              if(topic_ == TopicInfo::ID_PUBLISHER){
                 requestSyncTime();
                 negotiateTopics();
                 last_sync_time = c_time;
                 last_sync_receive_time = c_time;
                 return -1;
-              }else if(topic_ == rosserial_msgs::TopicInfo::ID_TIME){
+              }else if(topic_ == TopicInfo::ID_TIME){
                 syncTime(message_in);
               #if PARAM_REQ_SUPPORT
-              }else if (topic_ == rosserial_msgs::TopicInfo::ID_PARAMETER_REQUEST){
+              }else if (topic_ == TopicInfo::ID_PARAMETER_REQUEST){
                   req_param_resp.deserialize(message_in);
                   param_recieved= true;
               #endif
+              }else if(topic_ == TopicInfo::ID_TX_STOP){
+                  configured_ = false;
               }else{
                 if(subscribers[topic_-100])
                   subscribers[topic_-100]->callback( message_in );
@@ -274,7 +300,7 @@ namespace ros {
       void requestSyncTime()
       {
         std_msgs::Time t;
-        publish(rosserial_msgs::TopicInfo::ID_TIME, &t);
+        publish(TopicInfo::ID_TIME, &t);
         rt_time = hardware_.time();
       }
 
@@ -404,16 +430,16 @@ namespace ros {
 	  return 0;
 
         /* serialize message */
-        int l = msg->serialize(message_out+7);
+        unsigned int l = msg->serialize(message_out+7);
 
         /* setup the header */
         message_out[0] = 0xff;
         message_out[1] = PROTOCOL_VER;
-        message_out[2] = (unsigned char) l&255;
-        message_out[3] = (unsigned char) l>>8;
+        message_out[2] = (unsigned char) ((unsigned int)l&255);
+        message_out[3] = (unsigned char) ((unsigned int)l>>8);
 	message_out[4] = 255 - ((message_out[2] + message_out[3])%256);
-        message_out[5] = (unsigned char) id&255;
-        message_out[6] = ((unsigned char) id>>8);
+        message_out[5] = (unsigned char) ((int)id&255);
+        message_out[6] = (unsigned char) ((int)id>>8);
 
         /* calculate checksum */
         int chk = 0;
@@ -421,18 +447,20 @@ namespace ros {
           chk += message_out[i];
         l += 7;
         message_out[l++] = 255 - (chk%256);
+
         if( l <= OUTPUT_SIZE ){
           hardware_.write(message_out, l);
           return l;
         }else{
           logerror("Message from device dropped: message larger than buffer.");
-          return 0;
+          return -1;
         }
       }
 
       /********************************************************************
        * Logging
        */
+
     private:
       void log(char byte, const char * msg){
         rosserial_msgs::Log l;
@@ -464,14 +492,13 @@ namespace ros {
     #if PARAM_REQ_SUPPORT
     private:
       bool param_recieved;
-
       rosserial_msgs::RequestParamResponse req_param_resp;
 
       bool requestParam(const char * name, int time_out =  1000){
         param_recieved = false;
         rosserial_msgs::RequestParamRequest req;
         req.name  = (char*)name;
-        publish(rosserial_msgs::TopicInfo::ID_PARAMETER_REQUEST, &req);
+        publish(TopicInfo::ID_PARAMETER_REQUEST, &req);
         unsigned long end_time = hardware_.time() + time_out;
         while(!param_recieved ){
           spinOnce();

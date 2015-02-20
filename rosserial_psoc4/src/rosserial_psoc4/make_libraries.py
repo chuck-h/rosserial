@@ -73,7 +73,7 @@ ROS_TO_EMBEDDED_TYPES = {
 if (len(sys.argv) < 2):
     print __usage__
     exit()
-    
+
 # get output path
 path = sys.argv[1]
 if path[-1] == "/":
@@ -86,6 +86,7 @@ rospack = rospkg.RosPack()
 rosserial_source_dir = rospack.get_path(THIS_PACKAGE)
 shutil.copytree(rosserial_source_dir+"/src/ros_lib", path+"/ros_lib")
 rosserial_client_copy_files(rospack, path+"/ros_lib/")
+#shutil.copytree(rosserial_source_dir+"/src/examples", path+"/examples")
 
 # generate messages
 rosserial_generate(rospack, path+"/ros_lib", ROS_TO_EMBEDDED_TYPES, use_malloc=False)
